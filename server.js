@@ -5,6 +5,8 @@ const app = express();
 connectDB();
 const PORT = process.env.PORT || 5000;
 
+app.use(express.json({ extended: false }));
+
 app.get('/', (request, response) => {
     response.send('api running');
 });
