@@ -130,6 +130,73 @@ router.delete('/', auth, async(request, response) => {
     await User.findOneAndRemove({ _id: request.user.id });
 
     response.json({ msg: 'User deleted' });
+});
+
+//@route put api/profile/experience @desc add profile experience  @access Private
+
+router.put('/experience', [auth, [
+    check('title', 'Title is required').not().isEmpty(),
+    check('company', 'Company is required').not().isEmpty(),
+    check('from', 'From date is required').not().isEmpty()
+]], async(request, response) => {
+    const errors = validationResult(request);
+    if (!errors.isEmpty()) {
+        return response.status(400).json({ errors: errors.array() });
+    }
+
+    const {
+        title,
+        company,
+        location,
+        from,
+        to,
+        current,
+        description
+    } = request.body;
+
+    const newExp = {
+        //es6 syntax :   title: title
+        title,
+        company,
+        location,
+        from,
+        to,
+        current,
+        description
+    }
+
+    try {
+        const profile = await Profile.findOne({ user: request.user.id });
+
+        profile.experience.unshift(newExp);
+
+        await profile.save();
+
+        response.json(profile);
+    } catch (error) {
+        console.error(error.message);
+        response.status(500).send('Server Error');
+    }
+});
+
+//@route delete api/profile/experience/:exp_id @desc delete experience from profile   @access Private
+router.delete('/experience/:exp_id', auth, async(request, response) => {
+    try {
+        const profile = await Profile.findOne({ user: request.user.id });
+
+        //get remove index
+        const removeIndex = profile.experience.map(item => item.id).indexOf(request.params.exp_id);
+
+        profile.experience.splice(removeIndex, 1);
+
+        await profile.save();
+
+        response.json(profile);
+
+    } catch (error) {
+        console.error(error.message);
+        response.status(500).send('Server Error');
+    }
 })
 
 module.exports = router;
