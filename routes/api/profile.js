@@ -91,6 +91,45 @@ router.post('/', [auth, [
         response.status(500).send('Server Error');
     }
 
+});
+
+//@route get api/profile    @desc  get all profiles  @access public
+router.get('/', async(request, response) => {
+    try {
+        const profiles = await Profile.find().populate('user', ['name', 'avatar']);
+        response.json(profiles);
+    } catch (error) {
+        console.error(error.message);
+        response.status(500).send('Server Error');
+    }
+});
+
+//@route get api/profile/user/:user_id  @desc  get  profile by user id  @access public
+router.get('/user/:user_id', async(request, response) => {
+    try {
+        const profile = await Profile.findOne({ user: request.params.user_id }).populate('user', ['name', 'avatar']);
+
+        if (!profile) return response.status(400).json({ msg: 'Profile not found' });
+
+        response.json(profile);
+
+    } catch (error) {
+        console.error(error.message);
+        if (error.kind == 'ObjectId') {
+            response.status(400).json({ msg: 'Profile not found' });
+        }
+        response.status(500).send('Server Error');
+    }
+});
+
+//@route delete api/profile @desc delete profile, user and post  @access Private
+router.delete('/', auth, async(request, response) => {
+    // remove profile
+    await Profile.findOneAndRemove({ user: request.user.id });
+    //remove user
+    await User.findOneAndRemove({ _id: request.user.id });
+
+    response.json({ msg: 'User deleted' });
 })
 
 module.exports = router;
